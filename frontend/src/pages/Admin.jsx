@@ -4,6 +4,15 @@ import api from '../api/axios'
 
 const storageKey = 'admin_secret'
 
+const DELETE_REASONS = [
+  'Customer cancelled',
+  'Duplicate booking',
+  'Invalid contact details',
+  'Service not available on selected date',
+  'No response from customer',
+  'Other',
+]
+
 function Admin() {
   const envSecret = import.meta.env.VITE_ADMIN_SECRET || 'admin123'
   const [password, setPassword] = useState('')
@@ -16,11 +25,13 @@ function Admin() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [deleteTarget, setDeleteTarget] = useState(null)
-  const [deleteReason, setDeleteReason] = useState('')
   const [editingService, setEditingService] = useState(null)
   const [showServiceForm, setShowServiceForm] = useState(false)
-  const [bookingNotes, setBookingNotes] = useState({})
+  const [deleteServiceTarget, setDeleteServiceTarget] = useState(null)
+  const [deleteModal, setDeleteModal] = useState(null)
+  const [deleteReason, setDeleteReason] = useState('')
+  const [deleteCustom, setDeleteCustom] = useState('')
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   const isLoggedIn = useMemo(() => secret === envSecret, [secret, envSecret])
 
@@ -130,12 +141,35 @@ function Admin() {
     fetchBookings()
   }
 
-  const deleteBooking = async (id, reason) => {
-    await api.delete(`/api/bookings/${id}`, {
-      headers: { 'x-admin-secret': secret },
-      data: { deleteReason: reason || null },
-    })
-    fetchBookings()
+  const openDeleteModal = (id) => {
+    setDeleteModal(id)
+    setDeleteReason('')
+    setDeleteCustom('')
+  }
+
+  const closeDeleteModal = () => {
+    setDeleteModal(null)
+    setDeleteReason('')
+    setDeleteCustom('')
+  }
+
+  const confirmDelete = async () => {
+    const reason = deleteReason === 'Other' ? deleteCustom.trim() : deleteReason
+    if (!reason) return
+
+    setDeleteLoading(true)
+    try {
+      await api.delete(`/api/bookings/${deleteModal}`, {
+        headers: { 'x-admin-secret': secret },
+        data: { deleteReason: reason },
+      })
+      closeDeleteModal()
+      fetchBookings()
+    } catch (err) {
+      console.error('Delete failed:', err)
+    } finally {
+      setDeleteLoading(false)
+    }
   }
 
   const fetchServices = async () => {
@@ -148,16 +182,24 @@ function Admin() {
   }
 
   const addService = async (serviceData) => {
+    // Check if it's FormData
+    const isFormData = serviceData instanceof FormData
+    
     await api.post('/api/services', serviceData, {
       headers: { 'x-admin-secret': secret },
+      // DO NOT set Content-Type for FormData - browser adds boundary automatically
     })
     fetchServices()
     setShowServiceForm(false)
   }
 
   const updateService = async (id, serviceData) => {
+    // Check if it's FormData
+    const isFormData = serviceData instanceof FormData
+    
     await api.put(`/api/services/${id}`, serviceData, {
       headers: { 'x-admin-secret': secret },
+      // DO NOT set Content-Type for FormData - browser adds boundary automatically
     })
     fetchServices()
     setEditingService(null)
@@ -168,19 +210,6 @@ function Admin() {
       headers: { 'x-admin-secret': secret },
     })
     fetchServices()
-  }
-
-  const saveBookingNote = async (bookingId, note) => {
-    try {
-      await api.patch(
-        `/api/bookings/${bookingId}`,
-        { notes: note },
-        { headers: { 'x-admin-secret': secret } },
-      )
-      setBookingNotes((prev) => ({ ...prev, [bookingId]: note }))
-    } catch (err) {
-      setError('Failed to save note.')
-    }
   }
 
   if (!isLoggedIn) {
@@ -452,11 +481,7 @@ function Admin() {
                           Edit
                         </button>
                         <button
-                          onClick={() => {
-                            if (confirm(`Delete "${service.name}"? This cannot be undone.`)) {
-                              deleteService(service._id)
-                            }
-                          }}
+                          onClick={() => setDeleteServiceTarget(service)}
                           className="rounded-full border border-red-500/30 bg-red-600/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-red-300 transition hover:bg-red-600/20"
                         >
                           Delete
@@ -551,29 +576,6 @@ function Admin() {
                   <p className="md:col-span-2 text-slate-400"><span className="font-semibold text-white">Address:</span> {booking.address}</p>
                 </div>
 
-                {/* Booking Notes Section */}
-                <div className="mt-6">
-                  <label className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Booking Notes
-                  </label>
-                  <textarea
-                    value={bookingNotes[booking._id] !== undefined ? bookingNotes[booking._id] : (booking.notes || '')}
-                    onChange={(e) => setBookingNotes((prev) => ({ ...prev, [booking._id]: e.target.value }))}
-                    onBlur={() => {
-                      const note = bookingNotes[booking._id] || ''
-                      if (note !== (booking.notes || '')) {
-                        saveBookingNote(booking._id, note)
-                      }
-                    }}
-                    placeholder="Add notes about this booking..."
-                    rows="3"
-                    className="w-full rounded-2xl border border-white/10 bg-slate-800/60 p-4 text-sm text-white placeholder-slate-500 outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 resize-none"
-                  />
-                </div>
-
                 {booking.deleteReason && (
                   <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-950/40 p-4">
                     <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-400 mb-2">Deletion Reason</p>
@@ -592,7 +594,7 @@ function Admin() {
                   )}
                   {booking.status !== 'deleted' && (
                     <button
-                      onClick={() => setDeleteTarget(booking)}
+                      onClick={() => openDeleteModal(booking._id)}
                       className="rounded-full border border-red-500/30 bg-red-600/80 px-5 py-3 text-sm font-extrabold uppercase tracking-[0.16em] text-white transition hover:bg-red-500"
                     >
                       Delete
@@ -610,63 +612,127 @@ function Admin() {
             )}
           </div>
         )}
+          </>
+        )}
 
-        {deleteTarget && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/75 px-4 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-[2rem] border border-white/10 bg-slate-900 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
-              <p className="text-sm font-bold uppercase tracking-[0.24em] text-red-300">Confirm delete</p>
-              <h3 className="mt-3 text-2xl font-black text-white">Delete this booking?</h3>
-              <p className="mt-3 text-sm leading-6 text-slate-400">
-                {deleteTarget.customerName} for {deleteTarget.serviceName} will be permanently removed from the dashboard.
-              </p>
+        {/* Delete Booking Reason Modal */}
+        {deleteModal && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center px-4 backdrop-blur-sm">
+            <div
+              className="absolute inset-0 bg-slate-950/80"
+              onClick={closeDeleteModal}
+            />
+
+            <div className="relative w-full max-w-md rounded-[2rem] border border-white/10 bg-slate-900 p-8 shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
               
-              <div className="mt-5">
-                <label className="block text-sm font-semibold text-white mb-2">
-                  Reason for deletion <span className="text-red-400">*</span>
-                </label>
-                <textarea
-                  value={deleteReason}
-                  onChange={(e) => setDeleteReason(e.target.value)}
-                  placeholder="Please provide a reason for deleting this booking..."
-                  rows="3"
-                  className="w-full rounded-2xl border border-white/10 bg-slate-800 p-4 text-white outline-none transition placeholder:text-slate-500 focus:border-red-500 resize-none"
-                />
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-bold uppercase tracking-[0.28em] text-red-300">Confirm Delete</p>
+                  <h2 className="mt-2 text-2xl font-black text-white">Why are you deleting?</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-400">
+                    Select a reason before permanently removing this booking.
+                  </p>
+                </div>
+                <button
+                  onClick={closeDeleteModal}
+                  className="rounded-full border border-white/10 p-2 text-slate-400 transition hover:border-white/20 hover:text-white"
+                  aria-label="Close"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
 
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-6 flex flex-col gap-2">
+                {DELETE_REASONS.map((reason) => (
+                  <button
+                    key={reason}
+                    onClick={() => setDeleteReason(reason)}
+                    className={`w-full rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
+                      deleteReason === reason
+                        ? 'border-red-400 bg-red-500/10 text-red-300'
+                        : 'border-white/10 bg-slate-800/60 text-slate-300 hover:border-white/20 hover:bg-slate-800'
+                    }`}
+                  >
+                    {deleteReason === reason ? '● ' : '○ '}
+                    {reason}
+                  </button>
+                ))}
+              </div>
+
+              {deleteReason === 'Other' && (
+                <textarea
+                  value={deleteCustom}
+                  onChange={(e) => setDeleteCustom(e.target.value)}
+                  placeholder="Describe the reason..."
+                  rows={3}
+                  className="mt-4 w-full rounded-2xl border border-white/10 bg-slate-800/80 p-4 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-red-400 focus:ring-2 focus:ring-red-400/20 resize-none"
+                />
+              )}
+
+              <div className="mt-6 flex gap-3">
                 <button
-                  onClick={() => {
-                    setDeleteTarget(null)
-                    setDeleteReason('')
-                  }}
-                  className="rounded-full border border-white/10 px-5 py-3 text-sm font-bold uppercase tracking-[0.16em] text-slate-200 transition hover:border-white/20 hover:text-white"
+                  onClick={closeDeleteModal}
+                  className="flex-1 rounded-full border border-white/10 px-5 py-3 text-sm font-bold uppercase tracking-[0.16em] text-slate-200 transition hover:border-white/20 hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={async () => {
-                    if (!deleteReason.trim()) {
-                      setError('Please provide a reason for deletion.')
-                      return
-                    }
-                    await deleteBooking(deleteTarget._id, deleteReason.trim())
-                    setDeleteTarget(null)
-                    setDeleteReason('')
-                  }}
-                  disabled={!deleteReason.trim()}
-                  className={`rounded-full px-5 py-3 text-sm font-extrabold uppercase tracking-[0.16em] text-white transition ${
-                    deleteReason.trim()
-                      ? 'bg-red-600 hover:bg-red-500'
-                      : 'bg-red-600/40 cursor-not-allowed'
-                  }`}
+                  onClick={confirmDelete}
+                  disabled={
+                    !deleteReason ||
+                    (deleteReason === 'Other' && !deleteCustom.trim()) ||
+                    deleteLoading
+                  }
+                  className="flex-1 rounded-full bg-red-600 px-5 py-3 text-sm font-extrabold uppercase tracking-[0.14em] text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Delete Booking
+                  {deleteLoading ? 'Deleting...' : 'Delete Booking'}
                 </button>
               </div>
             </div>
           </div>
         )}
-          </>
+
+        {/* Delete Service Confirmation Modal */}
+        {deleteServiceTarget && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/80 px-4 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-[2rem] border border-white/10 bg-slate-900 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="rounded-full bg-red-500/10 p-3">
+                  <svg className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-bold uppercase tracking-[0.24em] text-red-300">Confirm Delete</p>
+                  <h3 className="text-xl font-black text-white">Delete this service?</h3>
+                </div>
+              </div>
+              
+              <p className="mt-3 text-sm leading-6 text-slate-400">
+                <span className="font-semibold text-white">{deleteServiceTarget.name}</span> will be permanently removed. This action cannot be undone.
+              </p>
+              
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <button
+                  onClick={() => setDeleteServiceTarget(null)}
+                  className="flex-1 rounded-full border border-white/10 px-5 py-3 text-sm font-bold uppercase tracking-[0.16em] text-slate-200 transition hover:border-white/20 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    await deleteService(deleteServiceTarget._id)
+                    setDeleteServiceTarget(null)
+                  }}
+                  className="flex-1 rounded-full bg-red-600 px-5 py-3 text-sm font-extrabold uppercase tracking-[0.16em] text-white transition hover:bg-red-500"
+                >
+                  Delete Service
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
@@ -720,6 +786,14 @@ function ServiceFormModal({ service, onClose, onSubmit }) {
     const description = formData.description.trim()
     const price = Number(formData.price)
     
+    console.log('=== FORM SUBMISSION DEBUG ===')
+    console.log('Form data state:', formData)
+    console.log('Image file:', imageFile)
+    console.log('Validated name:', name)
+    console.log('Validated description:', description)
+    console.log('Validated price:', price)
+    console.log('=============================')
+    
     if (!name) {
       setError('Service name is required')
       return
@@ -752,10 +826,18 @@ function ServiceFormModal({ service, onClose, onSubmit }) {
         data.append('imageUrl', formData.imageUrl.trim())
       }
 
+      console.log('FormData entries:')
+      for (let [key, value] of data.entries()) {
+        console.log(key, ':', value)
+      }
+
       await onSubmit(service?._id || null, data)
       onClose()
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save service. Please try again.')
+      const errorMessage = err.response?.data?.message || 'Failed to save service. Please try again.'
+      setError(errorMessage)
+      console.error(' Submit error:', errorMessage)
+      console.error('Full error response:', err.response?.data)
     } finally {
       setSubmitting(false)
     }

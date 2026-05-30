@@ -23,14 +23,36 @@ router.get('/', async (_req, res) => {
 // Admin routes - protected
 router.post('/', adminAuth, upload.single('image'), async (req, res) => {
   try {
-    const { name, description, price, imageUrl, category } = req.body
+    console.log('=== CREATE SERVICE DEBUG ===')
+    console.log('Content-Type:', req.headers['content-type'])
+    console.log('Body keys:', Object.keys(req.body || {}))
+    console.log('Body:', JSON.stringify(req.body, null, 2))
+    console.log('File:', req.file ? req.file.filename : 'No file')
+    console.log('===========================')
     
-    if (!name || !description || !price) {
-      return res.status(400).json({ message: 'Name, description, and price are required.' })
+    // Extract fields from body with fallbacks
+    const name = (req.body?.name || '').toString().trim()
+    const description = (req.body?.description || '').toString().trim()
+    const price = (req.body?.price || '').toString().trim()
+    const imageUrl = (req.body?.imageUrl || '').toString().trim()
+    const category = (req.body?.category || '').toString().trim()
+    
+    console.log('Extracted values:', { name, description, price, imageUrl, category })
+    
+    if (!name) {
+      return res.status(400).json({ message: 'Service name is required.' })
+    }
+    
+    if (!description) {
+      return res.status(400).json({ message: 'Description is required.' })
+    }
+    
+    if (!price || isNaN(Number(price)) || Number(price) <= 0) {
+      return res.status(400).json({ message: 'Valid price is required.' })
     }
     
     // Use uploaded file URL if available, otherwise use provided imageUrl
-    let finalImageUrl = imageUrl || ''
+    let finalImageUrl = imageUrl
     if (req.file) {
       finalImageUrl = `/api/services/uploads/${req.file.filename}`
     }
@@ -40,12 +62,13 @@ router.post('/', adminAuth, upload.single('image'), async (req, res) => {
       description,
       price: Number(price),
       imageUrl: finalImageUrl,
-      category: category || '',
+      category,
     })
     
+    console.log('✅ Service created successfully:', service._id)
     res.status(201).json(service)
   } catch (error) {
-    console.error('Create service error:', error)
+    console.error('❌ Create service error:', error)
     res.status(500).json({ message: error.message || 'Failed to create service.' })
   }
 })
