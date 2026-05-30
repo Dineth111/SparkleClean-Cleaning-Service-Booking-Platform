@@ -19,8 +19,8 @@ function Footer() {
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-accent">Contact</p>
           <div className="mt-4 space-y-2 text-sm text-slate-300">
             <p>hello@sparkleclean.com</p>
-            <p>+1 234 567 890</p>
-            <p>123 Sparkle Street, City Center</p>
+            <p>+94 77 681 3496</p>
+            <p>No.231/1, School Road, Walpolathenna, Galagedara</p>
           </div>
         </div>
       </div>

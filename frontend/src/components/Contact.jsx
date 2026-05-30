@@ -10,7 +10,7 @@ function Contact() {
           <div className="space-y-5">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Address</p>
-              <p className="mt-2 text-lg font-semibold text-slate-900">123 Sparkle Street, City Center</p>
+              <p className="mt-2 text-lg font-semibold text-slate-900">No.231/1, School Road, Walpolathenna, Galagedara</p>
             </div>
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Email</p>
@@ -18,10 +18,10 @@ function Contact() {
             </div>
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Phone</p>
-              <p className="mt-2 text-lg font-semibold text-slate-900">+1 234 567 890</p>
+              <p className="mt-2 text-lg font-semibold text-slate-900">+94 77 681 3496</p>
             </div>
             <a
-              href="https://wa.me/1234567890"
+              href="https://wa.me/94776813496"
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center justify-center rounded-full bg-accent px-5 py-3 text-sm font-extrabold uppercase tracking-[0.16em] text-slate-950 transition hover:bg-teal-300"
@@ -35,7 +35,7 @@ function Contact() {
             title="Google Map"
             className="h-[28rem] w-full border-0"
             loading="lazy"
-            src="https://maps.google.com/maps?q=New+York,NY&t=&z=13&ie=UTF8&iwloc=&output=embed"
+            src="https://maps.google.com/maps?q=No.231%2F1%2C%20School%20Road%2C%20Walpolathenna%2C%20Galagedara&t=&z=16&ie=UTF8&iwloc=&output=embed"
           />
         </div>
       </div>
