@@ -11,15 +11,21 @@ const images = [
 
 function Gallery() {
   return (
-    <section id="gallery" className="mx-auto max-w-6xl px-4 py-20">
-      <h2 className="mb-10 text-center text-3xl font-bold text-primary">Our Work</h2>
+    <section id="gallery" className="mx-auto max-w-6xl px-4 py-20 md:py-24">
+      <div className="mb-10 text-center md:mb-12">
+        <p className="text-sm font-bold uppercase tracking-[0.28em] text-accent">Gallery</p>
+        <h2 className="mt-3 text-3xl font-black text-primary md:text-4xl">Recent transformations</h2>
+        <p className="mx-auto mt-3 max-w-2xl text-slate-600 leading-7">
+          A quick look at the kind of polished, well-finished spaces our team helps maintain.
+        </p>
+      </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {images.map((img) => (
-          <div key={img} className="overflow-hidden rounded-xl">
+          <div key={img} className="group overflow-hidden rounded-[1.35rem] border border-slate-200 bg-white shadow-sm">
             <img
               src={img}
               alt="Cleaned space"
-              className="h-56 w-full object-cover transition duration-300 hover:scale-110"
+              className="h-56 w-full object-cover transition duration-500 group-hover:scale-110"
             />
           </div>
         ))}
