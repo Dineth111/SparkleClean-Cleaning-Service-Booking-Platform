@@ -25,9 +25,16 @@ router.post('/', async (req, res) => {
   }
 })
 
-router.get('/', adminAuth, async (_req, res) => {
+router.get('/', adminAuth, async (req, res) => {
   try {
-    const bookings = await Booking.find().sort({ createdAt: -1 })
+    const { includeDeleted } = req.query
+    
+    let query = {}
+    if (!includeDeleted) {
+      query.status = { $ne: 'deleted' }
+    }
+    
+    const bookings = await Booking.find(query).sort({ createdAt: -1 })
     res.json(bookings)
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch bookings.' })
@@ -36,9 +43,15 @@ router.get('/', adminAuth, async (_req, res) => {
 
 router.patch('/:id', adminAuth, async (req, res) => {
   try {
+    const { status, notes } = req.body
+    
+    const updateData = {}
+    if (status) updateData.status = status
+    if (notes !== undefined) updateData.notes = notes
+    
     const booking = await Booking.findByIdAndUpdate(
       req.params.id,
-      { status: 'completed' },
+      updateData,
       { new: true },
     )
     if (!booking) return res.status(404).json({ message: 'Booking not found.' })
@@ -50,7 +63,21 @@ router.patch('/:id', adminAuth, async (req, res) => {
 
 router.delete('/:id', adminAuth, async (req, res) => {
   try {
-    const booking = await Booking.findByIdAndDelete(req.params.id)
+    const { deleteReason } = req.body
+    
+    if (!deleteReason) {
+      return res.status(400).json({ message: 'Deletion reason is required.' })
+    }
+    
+    const booking = await Booking.findByIdAndUpdate(
+      req.params.id,
+      { 
+        status: 'deleted',
+        deleteReason,
+      },
+      { new: true },
+    )
+    
     if (!booking) return res.status(404).json({ message: 'Booking not found.' })
     res.json({ message: 'Booking deleted successfully.' })
   } catch (error) {

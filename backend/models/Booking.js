@@ -11,9 +11,11 @@ const bookingSchema = new mongoose.Schema({
   time: { type: String, required: true },
   status: {
     type: String,
-    enum: ['pending', 'completed'],
+    enum: ['pending', 'completed', 'deleted'],
     default: 'pending',
   },
+  notes: { type: String, default: '' },
+  deleteReason: { type: String, default: null },
   createdAt: { type: Date, default: Date.now },
 })
 
