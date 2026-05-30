@@ -18,8 +18,8 @@ function Home() {
   }
 
   return (
-    <div className="relative overflow-hidden bg-slate-50 text-slate-900">
-      <div className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-[34rem] bg-[radial-gradient(circle_at_top_left,rgba(20,184,166,0.12),transparent_34%),radial-gradient(circle_at_top_right,rgba(30,58,95,0.12),transparent_32%)]" />
+    <div className="relative overflow-hidden bg-[#0a0f1e] text-slate-100">
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-[42rem] bg-[radial-gradient(circle_at_top_left,rgba(20,184,166,0.12),transparent_34%),radial-gradient(circle_at_top_right,rgba(30,58,95,0.16),transparent_32%)]" />
       <Navbar />
       <main className="relative z-10">
         <Hero />

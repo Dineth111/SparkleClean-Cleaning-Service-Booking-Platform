@@ -2,6 +2,8 @@ import PropTypes from 'prop-types'
 import { useEffect, useMemo, useState } from 'react'
 import api from '../api/axios'
 
+const recentBookingsKey = 'sparkleclean_recent_bookings'
+
 function BookingForm({ selectedService }) {
   const [services, setServices] = useState([])
   const [form, setForm] = useState({
@@ -60,6 +62,17 @@ function BookingForm({ selectedService }) {
         serviceId: selected._id,
         ...form,
       })
+
+      const recentBookings = JSON.parse(localStorage.getItem(recentBookingsKey) || '{}')
+      recentBookings[form.serviceName] = {
+        serviceName: form.serviceName,
+        customerName: form.customerName,
+        date: form.date,
+        time: form.time,
+      }
+      localStorage.setItem(recentBookingsKey, JSON.stringify(recentBookings))
+      globalThis.dispatchEvent(new Event('storage'))
+
       setMessage('Booking submitted successfully!')
       setErrors({})
       setForm({
@@ -77,9 +90,10 @@ function BookingForm({ selectedService }) {
   }
 
   return (
-    <section id="booking" className="px-4 py-20 md:py-24">
-      <div className="mx-auto grid max-w-6xl gap-8 rounded-[2rem] border border-slate-200 bg-white/85 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur md:grid-cols-[0.9fr_1.1fr] md:p-8">
-        <div className="rounded-[1.75rem] bg-primary p-8 text-white">
+    <section id="booking" className="relative px-4 py-20 text-slate-100 md:py-24">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(20,184,166,0.10),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(30,58,95,0.14),transparent_32%)]" />
+      <div className="relative mx-auto grid max-w-6xl gap-8 rounded-[2.2rem] border border-white/10 bg-white/5 p-6 shadow-[0_30px_90px_rgba(0,0,0,0.38)] backdrop-blur-2xl md:grid-cols-[0.92fr_1.08fr] md:p-8 reveal">
+        <div className="rounded-[1.8rem] bg-primary p-8 text-white shadow-[0_20px_60px_rgba(30,58,95,0.22)]">
           <p className="text-sm font-bold uppercase tracking-[0.28em] text-accent">Online Booking</p>
           <h2 className="mt-3 text-3xl font-black md:text-4xl">Reserve a cleaning slot in minutes.</h2>
           <p className="mt-4 leading-8 text-slate-200">
@@ -92,7 +106,7 @@ function BookingForm({ selectedService }) {
               'Required-field validation before submission',
               'Instant admin visibility after booking',
             ].map((item) => (
-              <div key={item} className="rounded-2xl border border-white/10 bg-white/8 px-4 py-3 text-sm text-slate-100 backdrop-blur">
+              <div key={item} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-100 backdrop-blur-xl">
                 {item}
               </div>
             ))}
@@ -102,7 +116,7 @@ function BookingForm({ selectedService }) {
         <div>
           <div className="mb-6">
             <p className="text-sm font-bold uppercase tracking-[0.28em] text-accent">Book a Service</p>
-            <h3 className="mt-2 text-3xl font-black text-primary">Pick a service and send your request.</h3>
+            <h3 className="mt-2 text-3xl font-black text-white">Pick a service and send your request.</h3>
           </div>
           <form className="grid gap-4" onSubmit={onSubmit}>
             <div>
@@ -111,7 +125,7 @@ function BookingForm({ selectedService }) {
                 value={form.serviceName}
                 onChange={onChange}
                 disabled={loading}
-                className="w-full rounded-2xl border border-slate-300 bg-white p-3.5 text-slate-900 outline-none transition focus:border-accent disabled:cursor-not-allowed disabled:bg-slate-100"
+                className="w-full rounded-2xl border border-white/10 bg-slate-800/60 p-4 text-white outline-none transition placeholder:text-slate-500 focus:border-accent disabled:cursor-not-allowed disabled:bg-slate-900/70"
               >
                 <option value="">Select Service</option>
                 {services.map((service) => (
@@ -120,8 +134,8 @@ function BookingForm({ selectedService }) {
                   </option>
                 ))}
               </select>
-              {loading && <p className="mt-1 text-sm text-slate-500">Loading services...</p>}
-              {errors.serviceName && <p className="mt-1 text-sm text-red-600">{errors.serviceName}</p>}
+              {loading && <p className="mt-1 text-sm text-slate-400">Loading services...</p>}
+              {errors.serviceName && <p className="mt-1 text-sm text-red-400">{errors.serviceName}</p>}
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div>
@@ -131,9 +145,9 @@ function BookingForm({ selectedService }) {
                   name="date"
                   value={form.date}
                   onChange={onChange}
-                  className="w-full rounded-2xl border border-slate-300 bg-white p-3.5 outline-none transition focus:border-accent"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-800/60 p-4 text-white outline-none transition focus:border-accent"
                 />
-                {errors.date && <p className="mt-1 text-sm text-red-600">{errors.date}</p>}
+                {errors.date && <p className="mt-1 text-sm text-red-400">{errors.date}</p>}
               </div>
               <div>
                 <input
@@ -141,9 +155,9 @@ function BookingForm({ selectedService }) {
                   name="time"
                   value={form.time}
                   onChange={onChange}
-                  className="w-full rounded-2xl border border-slate-300 bg-white p-3.5 outline-none transition focus:border-accent"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-800/60 p-4 text-white outline-none transition focus:border-accent"
                 />
-                {errors.time && <p className="mt-1 text-sm text-red-600">{errors.time}</p>}
+                {errors.time && <p className="mt-1 text-sm text-red-400">{errors.time}</p>}
               </div>
             </div>
             <div>
@@ -153,9 +167,9 @@ function BookingForm({ selectedService }) {
                 value={form.customerName}
                 onChange={onChange}
                 placeholder="Full Name"
-                className="w-full rounded-2xl border border-slate-300 bg-white p-3.5 outline-none transition focus:border-accent"
+                className="w-full rounded-2xl border border-white/10 bg-slate-800/60 p-4 text-white placeholder-slate-500 outline-none transition focus:border-accent"
               />
-              {errors.customerName && <p className="mt-1 text-sm text-red-600">{errors.customerName}</p>}
+              {errors.customerName && <p className="mt-1 text-sm text-red-400">{errors.customerName}</p>}
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div>
@@ -165,9 +179,9 @@ function BookingForm({ selectedService }) {
                   value={form.email}
                   onChange={onChange}
                   placeholder="Email"
-                  className="w-full rounded-2xl border border-slate-300 bg-white p-3.5 outline-none transition focus:border-accent"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-800/60 p-4 text-white placeholder-slate-500 outline-none transition focus:border-accent"
                 />
-                {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+                {errors.email && <p className="mt-1 text-sm text-red-400">{errors.email}</p>}
               </div>
               <div>
                 <input
@@ -176,9 +190,9 @@ function BookingForm({ selectedService }) {
                   value={form.phone}
                   onChange={onChange}
                   placeholder="Phone"
-                  className="w-full rounded-2xl border border-slate-300 bg-white p-3.5 outline-none transition focus:border-accent"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-800/60 p-4 text-white placeholder-slate-500 outline-none transition focus:border-accent"
                 />
-                {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
+                {errors.phone && <p className="mt-1 text-sm text-red-400">{errors.phone}</p>}
               </div>
             </div>
             <div>
@@ -188,19 +202,19 @@ function BookingForm({ selectedService }) {
                 onChange={onChange}
                 placeholder="Address"
                 rows="4"
-                className="w-full rounded-2xl border border-slate-300 bg-white p-3.5 outline-none transition focus:border-accent"
+                className="w-full rounded-2xl border border-white/10 bg-slate-800/60 p-4 text-white placeholder-slate-500 outline-none transition focus:border-accent"
               />
-              {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address}</p>}
+              {errors.address && <p className="mt-1 text-sm text-red-400">{errors.address}</p>}
             </div>
             <button
-              className="rounded-full bg-accent px-6 py-4 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-950 transition hover:bg-teal-300 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-full bg-accent px-6 py-4 text-sm font-extrabold uppercase tracking-[0.18em] text-slate-950 transition hover:bg-teal-300 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={loading}
             >
               Submit Booking
             </button>
           </form>
           {message && (
-            <p className="mt-4 rounded-2xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-semibold text-teal-800">
+            <p className={`mt-4 rounded-2xl px-4 py-3 text-sm font-semibold ${message.includes('successfully') ? 'border border-teal-500/30 bg-teal-900/40 text-teal-300' : 'border border-red-500/30 bg-red-950/40 text-red-300'}`}>
               {message}
             </p>
           )}
