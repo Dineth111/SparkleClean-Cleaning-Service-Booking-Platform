@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 
 const links = [
   { label: 'Home', id: 'home' },
@@ -35,6 +36,14 @@ function Navbar() {
               </button>
             </li>
           ))}
+          <li>
+            <Link
+              to="/admin"
+              className="rounded-full border border-primary px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white"
+            >
+              Admin
+            </Link>
+          </li>
         </ul>
       </nav>
       {open && (
@@ -49,6 +58,13 @@ function Navbar() {
                 {link.label}
               </button>
             ))}
+            <Link
+              to="/admin"
+              onClick={() => setOpen(false)}
+              className="rounded border border-primary px-2 py-2 text-left text-sm font-semibold text-primary hover:bg-primary hover:text-white"
+            >
+              Admin
+            </Link>
           </div>
         </div>
       )}

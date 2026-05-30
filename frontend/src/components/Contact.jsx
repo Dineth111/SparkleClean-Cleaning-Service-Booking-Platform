@@ -16,12 +16,14 @@ function Contact() {
             Chat on WhatsApp
           </a>
         </div>
-        <iframe
-          title="Google Map"
-          className="h-80 w-full rounded-xl border-0"
-          loading="lazy"
-          src="https://www.google.com/maps?q=New+York&output=embed"
-        />
+        <div className="overflow-hidden rounded-xl">
+          <iframe
+            title="Google Map"
+            className="h-80 w-full border-0"
+            loading="lazy"
+            src="https://maps.google.com/maps?q=New+York,NY&t=&z=13&ie=UTF8&iwloc=&output=embed"
+          />
+        </div>
       </div>
     </section>
   )

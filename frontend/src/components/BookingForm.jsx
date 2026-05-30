@@ -14,22 +14,23 @@ function BookingForm({ selectedService }) {
   })
   const [errors, setErrors] = useState({})
   const [message, setMessage] = useState('')
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const loadServices = async () => {
-      const res = await api.get('/api/services')
-      setServices(res.data)
+      try {
+        setLoading(true)
+        const res = await api.get('/api/services')
+        setServices(res.data)
+      } finally {
+        setLoading(false)
+      }
     }
     loadServices()
   }, [])
 
-  useEffect(() => {
-    if (selectedService) {
-      setForm((prev) => ({ ...prev, serviceName: selectedService }))
-    }
-  }, [selectedService])
-
   const today = useMemo(() => new Date().toISOString().split('T')[0], [])
+  const serviceName = form.serviceName || selectedService
 
   const validate = () => {
     const nextErrors = {}
@@ -46,10 +47,19 @@ function BookingForm({ selectedService }) {
     e.preventDefault()
     if (!validate()) return
     try {
-      const selected = services.find((item) => item.name === form.serviceName)
+      const selected = services.find((item) => item.name === serviceName)
+      if (!selected) {
+        setErrors((prev) => ({
+          ...prev,
+          serviceName: 'Please wait for services to load and select a valid service.',
+        }))
+        setMessage('')
+        return
+      }
       await api.post('/api/bookings', {
-        serviceId: selected?._id,
+        serviceId: selected._id,
         ...form,
+        serviceName,
       })
       setMessage('Booking submitted successfully!')
       setErrors({})
@@ -73,7 +83,13 @@ function BookingForm({ selectedService }) {
         <h2 className="mb-6 text-3xl font-bold text-primary">Book a Service</h2>
         <form className="grid gap-4" onSubmit={onSubmit}>
           <div>
-            <select name="serviceName" value={form.serviceName} onChange={onChange} className="w-full rounded-lg border border-slate-300 p-3">
+            <select
+              name="serviceName"
+              value={serviceName}
+              onChange={onChange}
+              disabled={loading}
+              className="w-full rounded-lg border border-slate-300 p-3 disabled:cursor-not-allowed disabled:bg-slate-100"
+            >
               <option value="">Select Service</option>
               {services.map((service) => (
                 <option key={service._id} value={service.name}>
@@ -81,6 +97,7 @@ function BookingForm({ selectedService }) {
                 </option>
               ))}
             </select>
+            {loading && <p className="mt-1 text-sm text-slate-500">Loading services...</p>}
             {errors.serviceName && <p className="mt-1 text-sm text-red-600">{errors.serviceName}</p>}
           </div>
           <div className="grid gap-4 md:grid-cols-2">
@@ -109,7 +126,9 @@ function BookingForm({ selectedService }) {
             <textarea name="address" value={form.address} onChange={onChange} placeholder="Address" rows="3" className="w-full rounded-lg border border-slate-300 p-3" />
             {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address}</p>}
           </div>
-          <button className="rounded-lg bg-accent px-6 py-3 font-semibold text-white">Submit Booking</button>
+          <button className="rounded-lg bg-accent px-6 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60" disabled={loading}>
+            Submit Booking
+          </button>
         </form>
         {message && <p className="mt-4 text-sm font-medium text-primary">{message}</p>}
       </div>

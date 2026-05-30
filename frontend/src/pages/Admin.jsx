@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import api from '../api/axios'
 
 const storageKey = 'admin_secret'
@@ -29,8 +30,33 @@ function Admin() {
   }
 
   useEffect(() => {
-    if (isLoggedIn) fetchBookings()
-  }, [isLoggedIn])
+    if (!isLoggedIn) return undefined
+
+    let active = true
+
+    const loadBookings = async () => {
+      setLoading(true)
+      try {
+        const res = await api.get('/api/bookings', {
+          headers: { 'x-admin-secret': secret },
+        })
+        if (!active) return
+        setBookings(res.data)
+        setError('')
+      } catch (err) {
+        if (!active) return
+        setError(err.response?.data?.message || 'Failed to fetch bookings.')
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+
+    loadBookings()
+
+    return () => {
+      active = false
+    }
+  }, [isLoggedIn, secret])
 
   const login = (e) => {
     e.preventDefault()
@@ -60,7 +86,7 @@ function Admin() {
   }
 
   const deleteBooking = async (id) => {
-    const confirmed = window.confirm('Are you sure you want to delete this booking?')
+    const confirmed = globalThis.confirm('Are you sure you want to delete this booking?')
     if (!confirmed) return
     await api.delete(`/api/bookings/${id}`, {
       headers: { 'x-admin-secret': secret },
@@ -72,6 +98,9 @@ function Admin() {
     return (
       <div className="min-h-screen bg-slate-100 px-4 py-16">
         <div className="mx-auto max-w-md rounded-xl bg-white p-8 shadow">
+          <Link to="/" className="mb-6 inline-flex text-sm font-semibold text-primary hover:text-accent">
+            ← Back to Home
+          </Link>
           <h1 className="mb-4 text-2xl font-bold text-primary">Admin Login</h1>
           <form className="space-y-4" onSubmit={login}>
             <input
@@ -95,11 +124,13 @@ function Admin() {
     <div className="min-h-screen bg-slate-50 p-4 md:p-8">
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-3xl font-bold text-primary">Admin Dashboard</h1>
-          <button
-            onClick={logout}
-            className="rounded-lg bg-slate-800 px-4 py-2 font-semibold text-white"
-          >
+          <div className="flex items-center gap-4">
+            <Link to="/" className="text-sm font-semibold text-primary hover:text-accent">
+              ← Back to Home
+            </Link>
+            <h1 className="text-3xl font-bold text-primary">Admin Dashboard</h1>
+          </div>
+          <button onClick={logout} className="rounded-lg bg-slate-800 px-4 py-2 font-semibold text-white">
             Logout
           </button>
         </div>

@@ -1,88 +1,83 @@
-# Cleaning Service Booking Platform
+# SparkleClean Cleaning Service Booking Platform
+
+## Project Overview
+
+SparkleClean is a full-stack cleaning service booking platform with a React + Vite frontend, an Express + Mongoose backend, and MongoDB persistence. It lets customers browse services, submit bookings, and lets admins manage booking status through a protected dashboard.
+
+## Tech Stack
+
+- Frontend: React 19, Vite, Tailwind CSS, React Router
+- Backend: Node.js, Express 5, Mongoose
+- Database: MongoDB
 
 ## Setup Instructions
 
+### Prerequisites
+
+- Node.js installed locally
+- MongoDB running locally or a MongoDB Atlas connection string
+
+### Clone the repo
+
+```bash
+git clone <repo-url>
+cd SparkleClean-Cleaning-Service-Booking-Platform
+```
+
 ### Backend
-- `cd backend`
-- `npm install`
-- Add `.env` file:
-  - `PORT=5000`
-  - `MONGO_URI=mongodb://localhost:27017/cleaningservice`
-  - `ADMIN_SECRET=admin123`
-- `npm run dev`
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+Create a backend `.env` file with:
+
+```env
+PORT=5000
+MONGO_URI=mongodb://localhost:27017/cleaningservice
+ADMIN_SECRET=admin123
+```
 
 ### Frontend
-- `cd frontend`
-- `npm install`
-- Add `.env` file:
-  - `VITE_API_BASE_URL=http://localhost:5000`
-  - `VITE_ADMIN_SECRET=admin123`
-- `npm run dev`
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Create a frontend `.env` file with:
+
+```env
+VITE_API_BASE_URL=http://localhost:5000
+VITE_ADMIN_SECRET=admin123
+```
 
 ## API Documentation
 
-### 1) Get all services
-- **Method:** `GET`
-- **URL:** `/api/services`
-- **Headers:** None
-- **Body:** None
-- **Success Response (200):**
-```json
-[
-  {
-    "_id": "serviceId",
-    "name": "Deep Clean",
-    "description": "Full home deep cleaning service",
-    "price": 120,
-    "imageUrl": "https://...",
-    "category": "Home"
-  }
-]
-```
+| Method | Endpoint | Description | Auth Required |
+| --- | --- | --- | --- |
+| GET | `/api/services` | Get all services | No |
+| POST | `/api/bookings` | Create a booking | No |
+| GET | `/api/bookings` | Get all bookings | Yes (`x-admin-secret` header) |
+| PATCH | `/api/bookings/:id` | Mark booking as completed | Yes |
+| DELETE | `/api/bookings/:id` | Delete a booking | Yes |
 
-### 2) Create booking
-- **Method:** `POST`
-- **URL:** `/api/bookings`
-- **Headers:** `Content-Type: application/json`
-- **Body:**
-```json
-{
-  "serviceId": "serviceObjectId",
-  "serviceName": "Deep Clean",
-  "customerName": "John Doe",
-  "email": "john@example.com",
-  "phone": "9999999999",
-  "address": "123 Main Street",
-  "date": "2026-06-01",
-  "time": "10:00"
-}
-```
-- **Success Response (201):** Created booking object
-- **Error Response (400/500):** Validation or server error message
+## Admin Access
 
-### 3) Get all bookings (Admin)
-- **Method:** `GET`
-- **URL:** `/api/bookings`
-- **Headers:** `x-admin-secret: admin123`
-- **Body:** None
-- **Success Response (200):** Array of bookings
-- **Error Response (401/500):** Unauthorized or server error
+Visit `/admin` in the browser, enter the admin password, and log in to see the booking dashboard. The default secret should match the `ADMIN_SECRET` value in the backend and `VITE_ADMIN_SECRET` in the frontend.
 
-### 4) Mark booking as completed (Admin)
-- **Method:** `PATCH`
-- **URL:** `/api/bookings/:id`
-- **Headers:** `x-admin-secret: admin123`
-- **Body:** Optional, server sets status to completed
-- **Success Response (200):** Updated booking object
-- **Error Response (401/404/500):** Unauthorized, not found, or server error
+## Environment Variables
 
-### 5) Delete booking (Admin)
-- **Method:** `DELETE`
-- **URL:** `/api/bookings/:id`
-- **Headers:** `x-admin-secret: admin123`
-- **Body:** None
-- **Success Response (200):**
-```json
-{ "message": "Booking deleted successfully." }
-```
-- **Error Response (401/404/500):** Unauthorized, not found, or server error
+### Backend
+
+- `PORT`: Port for the Express server, typically `5000`
+- `MONGO_URI` or `MONGODB_URI`: MongoDB connection string used by Mongoose
+- `ADMIN_SECRET`: Secret required by the admin routes and dashboard login
+
+### Frontend
+
+- `VITE_API_BASE_URL`: Base URL for API requests, typically `http://localhost:5000`
+- `VITE_ADMIN_SECRET`: Admin password used by the login form

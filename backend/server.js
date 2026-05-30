@@ -17,7 +17,13 @@ app.use('/api/bookings', bookingRoutes)
 
 async function startServer() {
   try {
-    await mongoose.connect(process.env.MONGO_URI)
+    const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI
+
+    if (!mongoUri) {
+      throw new Error('Missing MongoDB connection string.')
+    }
+
+    await mongoose.connect(mongoUri)
     console.log('MongoDB connected.')
     await seedServices()
     app.listen(process.env.PORT, () => {
