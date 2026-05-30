@@ -182,24 +182,16 @@ function Admin() {
   }
 
   const addService = async (serviceData) => {
-    // Check if it's FormData
-    const isFormData = serviceData instanceof FormData
-    
     await api.post('/api/services', serviceData, {
       headers: { 'x-admin-secret': secret },
-      // DO NOT set Content-Type for FormData - browser adds boundary automatically
     })
     fetchServices()
     setShowServiceForm(false)
   }
 
   const updateService = async (id, serviceData) => {
-    // Check if it's FormData
-    const isFormData = serviceData instanceof FormData
-    
     await api.put(`/api/services/${id}`, serviceData, {
       headers: { 'x-admin-secret': secret },
-      // DO NOT set Content-Type for FormData - browser adds boundary automatically
     })
     fetchServices()
     setEditingService(null)
@@ -443,8 +435,13 @@ function Admin() {
                   setShowServiceForm(false)
                   setEditingService(null)
                 }}
-                onSubmit={editingService ? updateService : addService}
-                secret={secret}
+                onSubmit={async (id, data) => {
+                  if (id) {
+                    await updateService(id, data)
+                  } else {
+                    await addService(data)
+                  }
+                }}
               />
             )}
 
@@ -786,14 +783,6 @@ function ServiceFormModal({ service, onClose, onSubmit }) {
     const description = formData.description.trim()
     const price = Number(formData.price)
     
-    console.log('=== FORM SUBMISSION DEBUG ===')
-    console.log('Form data state:', formData)
-    console.log('Image file:', imageFile)
-    console.log('Validated name:', name)
-    console.log('Validated description:', description)
-    console.log('Validated price:', price)
-    console.log('=============================')
-    
     if (!name) {
       setError('Service name is required')
       return
@@ -826,18 +815,11 @@ function ServiceFormModal({ service, onClose, onSubmit }) {
         data.append('imageUrl', formData.imageUrl.trim())
       }
 
-      console.log('FormData entries:')
-      for (let [key, value] of data.entries()) {
-        console.log(key, ':', value)
-      }
-
       await onSubmit(service?._id || null, data)
       onClose()
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Failed to save service. Please try again.'
       setError(errorMessage)
-      console.error(' Submit error:', errorMessage)
-      console.error('Full error response:', err.response?.data)
     } finally {
       setSubmitting(false)
     }
